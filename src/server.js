@@ -1,13 +1,13 @@
 require('dotenv').config();
-//require('./database');
+const cors = require('cors');
 const { sequelize } = require('./models/index');
 const express = require('express');
 
 const app = express();
 
-//For POST requests
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
+app.use(cors());
 
 app.use('/api', require('./routes/api'));
 
