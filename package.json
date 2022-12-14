@@ -4,7 +4,9 @@
   "description": "RealWorld App(Medium clone) Using Express, Sequelize and Postgre",
   "main": "./src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .  --ext .js",
+    "lint-fix": "eslint --fix .  --ext .js"
   },
   "author": "",
   "license": "ISC",
@@ -17,5 +19,8 @@
     "pg": "^8.8.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.26.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.29.0"
   }
 }
