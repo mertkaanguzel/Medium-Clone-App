@@ -1,6 +1,6 @@
 const { User } = require('../models/index');
 const { serializeUser } = require('../utils/jwt');
-const { filterUser } = require('../utils/filterUser');
+const { modifyUser } = require('../utils/modifyUser');
 const bcrypt = require('bcrypt');
 
 async function signupUser(req, res) {
@@ -32,7 +32,7 @@ async function signupUser(req, res) {
             throw new Error('Error creating user');
         }
 
-        const createdUser = await filterUser(user.get());
+        const createdUser = await modifyUser(user.get());
         createdUser.token = await serializeUser(createdUser);
 
         res.send({user: createdUser});
@@ -79,7 +79,7 @@ async function signinUser(req, res) {
             throw new Error('Password does not match');
         }
     
-        const createdUser = await filterUser(user.get());
+        const createdUser = await modifyUser(user.get());
         createdUser.token = await serializeUser(createdUser);
     
         res.send({user: createdUser});

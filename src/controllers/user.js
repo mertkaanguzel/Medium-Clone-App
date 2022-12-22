@@ -1,5 +1,5 @@
 const { User } = require('../models/index');
-const { filterUser } = require('../utils/filterUser');
+const { modifyUser } = require('../utils/modifyUser');
 const bcrypt = require('bcrypt');
 
 async function getCurrentUser(req, res) {
@@ -31,7 +31,7 @@ async function updateUser(req, res) {
         }
 
         const updatedUser = await existingUser.update(userOpts);
-        const filteredUser = await filterUser(updatedUser.get());
+        const filteredUser = await modifyUser(updatedUser.get());
         filteredUser.token = req.header('Authorization').substring(6);
         
 

@@ -1,14 +1,14 @@
 const { modifyProfile } = require('./modifyProfile');
 const { modifyFavorites } = require('./modifyFavorites');
 
-async function filterArticle(article, profile, loggedinUser) {
+async function modifyArticle(article, loggedinUser) {
     delete article.UserUsername;
 
     article.tagList = article.tagList.map((tag) => {
         return tag.dataValues.name;
     })
 
-    article.author = await modifyProfile(profile, loggedinUser);
+    article.author = await modifyProfile(article.author, loggedinUser);
 
     delete article.authorUsername;
     /*
@@ -21,12 +21,13 @@ async function filterArticle(article, profile, loggedinUser) {
     delete article.favorites;
     */
     article = await modifyFavorites(article, loggedinUser);
-    
+    /*
     article = Object.entries(article);
     
-    return Object.fromEntries(article);
+    return Object.fromEntries(article);*/
+    return article;
 }
 
 module.exports = {
-    filterArticle
+    modifyArticle
 }

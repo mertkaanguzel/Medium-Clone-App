@@ -1,12 +1,12 @@
 const { Router } = require('express');
 const route = Router();
-const { getProfile, followProfile, unfollowProfile } = require('../../controllers/profile');
+const { getProfile, toggleFollow } = require('../../controllers/profile');
 const { userAuthorization } = require('../../middlewares/auth');
 
 route.get('/:username', userAuthorization, getProfile);
 
-route.post('/:username/follow', userAuthorization, followProfile);
+route.post('/:username/follow', userAuthorization, toggleFollow);
 
-route.delete('/:username/follow', userAuthorization, unfollowProfile);
+route.delete('/:username/follow', userAuthorization, toggleFollow);
 
 module.exports = route;

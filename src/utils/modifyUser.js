@@ -1,4 +1,4 @@
-async function filterUser(user) {
+async function modifyUser(user) {
     const asArray = Object.entries(user);
     const attributes = ['email', 'username', 'bio', 'image'];
 
@@ -9,5 +9,5 @@ async function filterUser(user) {
     return Object.fromEntries(filtered);
 }
 module.exports = {
-    filterUser
+    modifyUser
 }

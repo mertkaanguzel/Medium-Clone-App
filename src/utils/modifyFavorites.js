@@ -1,5 +1,3 @@
-const { filterUser } = require('./filterUser');
-
 async function modifyFavorites(article, loggedinUser) {
     article.favoritesCount = article.favorites.length;
 
@@ -11,6 +9,7 @@ async function modifyFavorites(article, loggedinUser) {
 
     return article;
 }
+
 module.exports = {
     modifyFavorites
 }
