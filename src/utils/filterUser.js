@@ -8,7 +8,6 @@ async function filterUser(user) {
 
     return Object.fromEntries(filtered);
 }
-
 module.exports = {
     filterUser
 }

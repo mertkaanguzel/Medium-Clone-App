@@ -1,5 +1,6 @@
 const { User } = require('../models/index');
 const { filterUser } = require('../utils/filterUser');
+const { modifyProfile } = require('../utils/modifyProfile')
 
 async function getProfile(req, res) {
     try {
@@ -17,22 +18,24 @@ async function getProfile(req, res) {
             throw new Error('Did not supply username');
         }
 
-        const profile = await User.findByPk(profileName, {include: 'followers'});
+        const profile = await User.findByPk(profileName);
         
         if(!profile) {
             res.statusCode = 403;
             throw new Error('No profile with given username');
         }
+        /*
         const followers = await profile.getFollowers();
 
-        let follower = followers.find(user => user.dataValues.username === req.user.username);
+        let isFollowing = followers.find(user => user.dataValues.username === req.user.username);
 
         const filteredProfile = await filterUser(profile.get());
         delete filteredProfile.email;
-        filteredProfile.following = Boolean(follower);
-        
+        filteredProfile.following = Boolean(isFollowing);
+        */
+       const modifiedProfile = await modifyProfile(profile, req.user);
 
-        res.send({profile: filteredProfile});
+        res.send({profile: modifiedProfile});
     }catch(error) {
         const status = res.statusCode ? res.statusCode : 422;
         
@@ -70,16 +73,19 @@ async function followProfile(req, res) {
 
         await profile.addFollowers(existingUser);
 
+        /*
         const followers = await profile.getFollowers();
 
-        let follower = followers.find(user => user.dataValues.username === req.user.username);
+        let isFollowing = followers.find(user => user.dataValues.username === req.user.username);
 
         const filteredProfile = await filterUser(profile.get());
         delete filteredProfile.email;
-        filteredProfile.following = Boolean(follower);
+        filteredProfile.following = Boolean(isFollowing);
+        */
+       const modifiedProfile = await modifyProfile(profile, req.user);
         
 
-        res.send({profile: filteredProfile});
+        res.send({profile: modifiedProfile});
     }catch(error) {
         const status = res.statusCode ? res.statusCode : 422;
         
@@ -117,16 +123,19 @@ async function unfollowProfile(req, res) {
 
         await profile.removeFollowers(existingUser);
 
+        /*
         const followers = await profile.getFollowers();
 
-        let follower = followers.find(user => user.dataValues.username === req.user.username);
+        let isFollowing = followers.find(user => user.dataValues.username === req.user.username);
 
         const filteredProfile = await filterUser(profile.get());
         delete filteredProfile.email;
-        filteredProfile.following = Boolean(follower);
+        filteredProfile.following = Boolean(isFollowing);
+        */
+       const modifiedProfile = await modifyProfile(profile, req.user);
         
 
-        res.send({profile: filteredProfile});
+        res.send({profile: modifiedProfile});
     }catch(error) {
         const status = res.statusCode ? res.statusCode : 422;
         

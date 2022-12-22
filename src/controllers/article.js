@@ -1,5 +1,6 @@
 const { User, Article, Tag } = require('../models/index');
-
+const { filterArticle } = require('../utils/filterArticle');
+const { filterUser } = require('../utils/filterUser');
 async function listArticles(req, res) {
     try {
         const existingUser = await User.findByPk(req.user.username);
@@ -44,7 +45,7 @@ async function listArticles(req, res) {
     
 }
 
-async function createArticles(req, res) {
+async function createArticle(req, res) {
     try {
 
         const existingUser = await User.findByPk(req.user.username);
@@ -66,22 +67,133 @@ async function createArticles(req, res) {
             throw new Error('Did not supply body');
         }
 
-        if (articleOpts.tagList) {
-            articleOpts.tagList = articleOpts.tagList.map(tag => ({
-                name: tag,
-            }));
-        }
-
-        console.log(articleOpts.tagList);
-
         articleOpts.slug = articleOpts.title.toLowerCase().split(' ').join('-')
 
-        const article = await Article.create({...articleOpts}, {include: 'tagList'});
-       
+        let article = await Article.create({...articleOpts});
+
         if(!article) {
+            res.statusCode = 403;
             throw new Error('Error creating article');
         }
-   
+
+        await article.setAuthor(existingUser);
+
+        if (articleOpts.tagList) {
+            for (let name of articleOpts.tagList) {
+                let tag = await Tag.findByPk(name);
+                if (!tag) {
+                    tag = await Tag.create({name: name});
+                }
+                await article.addTagList(tag); 
+            }   
+        }
+
+        article = await Article.findByPk(articleOpts.slug, { include: [
+            'tagList',
+           'author',
+           'favorites'
+       ] });
+       /* 
+       article = await filterArticle(article.get());
+       article.author = await filterUser(article.author.dataValues);
+       delete article.authorUsername;
+       */
+        article = await filterArticle(article.get(), existingUser, req.user);
+
+
+        res.send({article: article});
+    }catch(error) {
+        const status = res.statusCode ? res.statusCode : 422;
+        
+        res.status(status).json({
+            errors: {
+                body : [error.message]
+            }
+        });  
+    }
+    
+}
+
+async function getArticle(req, res) {
+    try {
+
+        const existingUser = await User.findByPk(req.user.username);
+        
+        if(!existingUser) {
+            res.statusCode = 403;
+            throw new Error('No user with given username');
+        }
+
+        const slug = req.params.slug;
+
+        let article = await Article.findByPk(slug, { include: [
+             'tagList',
+            'author',
+            'favorites'
+        ] });
+
+        if(!article) {
+            res.statusCode = 403;
+            throw new Error('No article with given slug');
+        }
+        /* 
+       article = await filterArticle(article.get());
+       article.author = await filterUser(article.author.dataValues);
+       delete article.authorUsername;
+       */
+        article = await filterArticle(article.get(), existingUser, req.user);
+
+
+        res.send({article: article});
+    }catch(error) {
+        const status = res.statusCode ? res.statusCode : 422;
+        
+        res.status(status).json({
+            errors: {
+                body : [error.message]
+            }
+        });  
+    }
+    
+}
+
+
+async function toggleFavorite(req, res) {
+    try {
+        const existingUser = await User.findByPk(req.user.username);
+        
+        if(!existingUser) {
+            res.statusCode = 403;
+            throw new Error('No user with given username');
+        }
+
+        const slug = req.params.slug;
+
+        let article = await Article.findByPk(slug, { include: [
+             'tagList',
+            'author',
+            'favorites'
+        ] });
+
+        if(!article) {
+            res.statusCode = 403;
+            throw new Error('No article with given slug');
+        }
+
+        if (req.method === "POST") await article.addFavorites(existingUser);
+        if (req.method === "DELETE") await article.removeFavorites(existingUser);
+
+        //await article.addFavorites(existingUser);
+
+        /* 
+       article = await filterArticle(article.get());
+       article.author = await filterUser(article.author.dataValues);
+       delete article.authorUsername;
+       */
+        await article.reload();
+
+        article = await filterArticle(article.get(), existingUser, req.user);
+
         res.send({article: article});
     }catch(error) {
         const status = res.statusCode ? res.statusCode : 422;
@@ -97,5 +209,7 @@ async function createArticles(req, res) {
 
 module.exports = {
     listArticles,
-    createArticles
+    createArticle,
+    getArticle,
+    toggleFavorite
 };
