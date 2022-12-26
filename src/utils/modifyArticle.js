@@ -11,20 +11,9 @@ async function modifyArticle(article, loggedinUser) {
     article.author = await modifyProfile(article.author, loggedinUser);
 
     delete article.authorUsername;
-    /*
-    article.favoritesCount = article.favorites.length;
-
-    const isFavorited = article.favorites.find(user => user.dataValues.username === loggedinUser.username);
-
-    article.favorited = Boolean(isFavorited);
-
-    delete article.favorites;
-    */
+   
     article = await modifyFavorites(article, loggedinUser);
-    /*
-    article = Object.entries(article);
     
-    return Object.fromEntries(article);*/
     return article;
 }
 

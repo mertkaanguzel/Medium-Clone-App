@@ -3,18 +3,18 @@ const { modifyArticle } = require('../utils/modifyArticle');
 const { filterArticles } = require('../utils/filterArticles');
 async function listArticles(req, res) {
     try {
-        const existingUser = await User.findByPk(req.user.username);
+        if (req.user) {
+            const existingUser = await User.findByPk(req.user.username);
 
-        if(!existingUser) {
-            res.statusCode = 403;
-            throw new Error('No user with given username');
+            if(!existingUser) {
+                res.statusCode = 403;
+                throw new Error('No user with given username');
+            }
         }
 
-        const queryOpts = await filterArticles(req.query);
-        console.log(queryOpts);
+        const queryOpts = await filterArticles(req.query, req.user);
+
         let articles = await Article.findAll(queryOpts);
-        console.log(articles);
-        
         
         let articleList = [];
 
@@ -61,7 +61,7 @@ async function createArticle(req, res) {
             throw new Error('Did not supply body');
         }
 
-        articleOpts.slug = articleOpts.title.toLowerCase().split(' ').join('-')
+        articleOpts.slug = articleOpts.title.toLowerCase().split(' ').join('-');
 
         let article = await Article.create({...articleOpts});
 
@@ -87,11 +87,7 @@ async function createArticle(req, res) {
            'author',
            'favorites'
        ] });
-       /* 
-       article = await modifyArticle(article.get());
-       article.author = await modifyUser(article.author.dataValues);
-       delete article.authorUsername;
-       */
+     
        article = await modifyArticle(article.get(), req.user);
 
 
@@ -111,11 +107,13 @@ async function createArticle(req, res) {
 async function getArticle(req, res) {
     try {
 
-        const existingUser = await User.findByPk(req.user.username);
-        
-        if(!existingUser) {
-            res.statusCode = 403;
-            throw new Error('No user with given username');
+        if (req.user) {
+            const existingUser = await User.findByPk(req.user.username);
+
+            if(!existingUser) {
+                res.statusCode = 403;
+                throw new Error('No user with given username');
+            }
         }
 
         const slug = req.params.slug;
@@ -130,11 +128,7 @@ async function getArticle(req, res) {
             res.statusCode = 403;
             throw new Error('No article with given slug');
         }
-        /* 
-       article = await modifyArticle(article.get());
-       article.author = await modifyUser(article.author.dataValues);
-       delete article.authorUsername;
-       */
+        
         article = await modifyArticle(article.get(), req.user);
 
 
@@ -173,12 +167,6 @@ async function deleteArticle(req, res) {
             res.statusCode = 403;
             throw new Error('No article with given slug');
         }
-        /* 
-       article = await modifyArticle(article.get());
-       article.author = await modifyUser(article.author.dataValues);
-       delete article.authorUsername;
-       */
-        //article = await modifyArticle(article.get(), req.user);
 
         if(article.author.dataValues.username !== existingUser.dataValues.username) {
             res.statusCode = 403;
@@ -187,8 +175,6 @@ async function deleteArticle(req, res) {
 
         await article.destroy();
 
-
-        //res.send({article: article});
     }catch(error) {
         const status = res.statusCode ? res.statusCode : 422;
         
@@ -227,13 +213,6 @@ async function toggleFavorite(req, res) {
         if (req.method === "POST") await article.addFavorites(existingUser);
         if (req.method === "DELETE") await article.removeFavorites(existingUser);
 
-        //await article.addFavorites(existingUser);
-
-        /* 
-       article = await modifyArticle(article.get());
-       article.author = await modifyUser(article.author.dataValues);
-       delete article.authorUsername;
-       */
         await article.reload();
 
         article = await modifyArticle(article.get(), req.user);
@@ -251,10 +230,67 @@ async function toggleFavorite(req, res) {
     
 }
 
+async function updateArticle(req, res) {
+    try {
+        const existingUser = await User.findByPk(req.user.username);
+        
+        if (!existingUser) {
+            res.statusCode = 403;
+            throw new Error('No user with given username');
+        }
+
+        const slug = req.params.slug;
+
+        let article = await Article.findByPk(slug, { include: [
+             'tagList',
+            'author',
+            'favorites'
+        ] });
+
+        if (!article) {
+            res.statusCode = 403;
+            throw new Error('No article with given slug');
+        }
+
+        if (article.author.dataValues.username !== existingUser.dataValues.username) {
+            res.statusCode = 403;
+            throw new Error('The article can only be updated by its author');
+        }
+
+        const articleOpts = req.body.article;
+        
+        if (!articleOpts) {
+            res.statusCode = 403;
+            throw new Error('At least one field is required.');
+        }
+
+        if (articleOpts.title) {
+            articleOpts.slug = articleOpts.title.toLowerCase().split(' ').join('-');
+        }
+
+        let updatedArticle = await article.update(articleOpts);
+
+        updatedArticle = await modifyArticle(updatedArticle.get(), req.user);
+
+
+        res.send({article: updatedArticle});
+    }catch(error) {
+        const status = res.statusCode ? res.statusCode : 422;
+        
+        res.status(status).json({
+            errors: {
+                body : [error.message]
+            }
+        });  
+    }
+    
+}
+
 module.exports = {
     listArticles,
     createArticle,
     getArticle,
     toggleFavorite,
-    deleteArticle
+    deleteArticle,
+    updateArticle
 };

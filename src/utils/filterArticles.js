@@ -1,19 +1,12 @@
-const { modifyArticle } = require('./modifyArticle');
-const { User, Article, Tag } = require('../models/index');
+const { User, Tag } = require('../models/index');
 
-async function filterArticles(filters) {
+async function filterArticles(filters, loggedinUser) {
     const { tag, author, favorited, limit = 20, offset = 0 } = filters;
     const queryOpts = {
         limit: parseInt(limit),
         offset: parseInt(offset),
-        /*
-        include: [
-            'tagList',
-           'author',
-           'favorites'
-       ]
-       */
-      include: []
+        include: [],
+        order: [['createdAt', 'DESC']],
     };
 
     if (tag) queryOpts.include.push({
@@ -26,15 +19,28 @@ async function filterArticles(filters) {
         as:  'tagList'
     });
 
-    if (author) queryOpts.include.push({
+
+    let authorOpts = {
         model: User,
-        as:  'author',
-        where: {username: author}
-    });
-    else queryOpts.include.push({
-        model: User,
-        as:  'author'
-    });
+        as: 'author'
+    };
+
+    if (author) {
+        authorOpts.where = {username: author};
+    }
+
+    if (loggedinUser) {
+        authorOpts.include  =  [
+            {
+                model: User,
+                as:  'followers',
+                where: {username: loggedinUser.username}
+            }
+        ];
+    }
+
+    queryOpts.include.push(authorOpts);
+
 
     if (favorited) queryOpts.include.push({
         model: User,
@@ -45,6 +51,7 @@ async function filterArticles(filters) {
         model: User,
         as:  'favorites'
     });
+
 
     return queryOpts;
     
